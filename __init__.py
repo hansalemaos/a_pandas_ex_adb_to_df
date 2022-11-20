@@ -1,26 +1,60 @@
+import os
 import re
 import subprocess
 import pandas as pd
 import regex
 from flatten_everything import flatten_everything
 from com.dtmilano.android.viewclient import ViewClient
+from flexible_partial import FlexiblePartial
+
+pulledfilecompiled = regex.compile(r"1\s+file\s+pulled", flags=regex.IGNORECASE)
 
 
 def connect_to_adb(
     serialnumber: str, adb_path: str = r"C:\ProgramData\adb\adb.exe",
 ):
-    _ = subprocess.run(
-        f"{adb_path} start-server", capture_output=True, shell=False
-    )
+    _ = subprocess.run(f"{adb_path} start-server", capture_output=True, shell=False)
     kwargs1 = {
         "timeout": 30,
         "ignoreversioncheck": False,
-        "verbose": False,
+        "verbose": True,
         "ignoresecuredevice": False,
         "serialno": f"{serialnumber}",
     }
     device, serialno = ViewClient.connectToDeviceOrExit(**kwargs1)
     return device
+
+
+def remove_file(fullpath_on_device,device):
+    print(f'Deleting {fullpath_on_device}                         ', end='\r')
+    return device.shell(f'''rm -f "{fullpath_on_device}"''')
+
+def pull_adb_file(save_in_folder, folder_on_device, fullpath_on_device, adb_path,serialnumber):
+    print(save_in_folder, folder_on_device, fullpath_on_device, adb_path)
+    savepath_folder = (
+        os.path.join(save_in_folder, folder_on_device)
+        .replace("/", os.sep)
+        .replace("\\", os.sep)
+    )
+
+    savepath = (
+        os.path.join(save_in_folder, fullpath_on_device)
+        .replace("/", os.sep)
+        .replace("\\", os.sep)
+    )
+    if not os.path.exists(savepath_folder):
+        os.makedirs(savepath_folder)
+    ps = subprocess.run(
+        f'"{adb_path}" -s {serialnumber} pull "{fullpath_on_device}" "{savepath}"',
+        capture_output=True,
+        shell=True,
+    )
+    output=ps.stdout.decode("utf-8", "replace")
+    print(output)
+    if pulledfilecompiled.search(output) is not None:
+        return True
+    else:
+        return False
 
 
 def get_folder_df(
@@ -76,6 +110,16 @@ def get_folder_df(
         "aa_time",
     ]
 
+    df.aa_fullpath = df.aa_fullpath.astype("string").str.replace(
+        r"\\(\s+)", r"\g<1>", regex=True, flags=regex.IGNORECASE
+    )
+    df.aa_folder = df.aa_folder.astype("string").str.replace(
+        r"\\(\s+)", r"\g<1>", regex=True, flags=regex.IGNORECASE
+    )
+    df.aa_filename = df.aa_filename.astype("string").str.replace(
+        r"\\(\s+)", r"\g<1>", regex=True, flags=regex.IGNORECASE
+    )
+
     try:
         df["aa_filename"] = df["aa_filename"].astype("string")
     except Exception:
@@ -123,6 +167,26 @@ def get_folder_df(
     except Exception:
         pass
 
+    df["ff_pull_file"] = df.apply(
+        lambda x: FlexiblePartial(
+            pull_adb_file,
+            True,
+            folder_on_device=x.aa_folder,
+            fullpath_on_device=x.aa_fullpath,
+            adb_path=adb_path,
+            serialnumber=device.__dict__['serialno']
+        ),
+        axis=1,
+    )
+    df["ff_remove_file"] = df.apply(
+        lambda x: FlexiblePartial(
+            remove_file,
+            True,
+            fullpath_on_device=x.aa_fullpath,
+            device=device
+        ),
+        axis=1,
+    )
     return df
 
 
