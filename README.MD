@@ -5,6 +5,22 @@ pip install a-pandas-ex-adb-to-df
 ```
 
 ```python
+#Update 2022/11/22:
+
+#you can now pull files (folders will be created if they don't exist)
+for key, item in dff.loc[(dff.aa_size > 10) & (dff.aa_size < 200) & (~dff.aa_filename.str.contains('->')) & (~dff.aa_filename.str.contains('/tmp'))].iterrows():
+    try:
+        item.ff_pull_file(f'f:\\keyboardstuffxx2')
+    except Exception:
+        pass
+        
+#and remove files 
+for key, item in dff.loc[dff.aa_fullpath.str.contains(r'tmp.*\.bin') & dff.aa_folder.str.contains(r'sdcard/')].iterrows():
+    try:
+        item.ff_remove_file()
+    except Exception:
+        pass
+
 #first way
 from a_pandas_ex_adb_to_df import pd_add_adb_to_df, connect_to_adb
 import pandas as pd
