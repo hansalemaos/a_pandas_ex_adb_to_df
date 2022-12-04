@@ -5,8 +5,9 @@ pip install a-pandas-ex-adb-to-df
 ```
 
 ```python
+################################################
 #Update 2022/11/22:
-
+################################################
 #you can now pull files (folders will be created if they don't exist)
 for key, item in dff.loc[(dff.aa_size > 10) & (dff.aa_size < 200) & (~dff.aa_filename.str.contains('->')) & (~dff.aa_filename.str.contains('/tmp'))].iterrows():
     try:
@@ -20,21 +21,14 @@ for key, item in dff.loc[dff.aa_fullpath.str.contains(r'tmp.*\.bin') & dff.aa_fo
         item.ff_remove_file()
     except Exception:
         pass
-
-#first way
-from a_pandas_ex_adb_to_df import pd_add_adb_to_df, connect_to_adb
-import pandas as pd
-pd_add_adb_to_df()
-device = connect_to_adb(
-    serialnumber="XXXXXXXXXXXXXXXXXXXXXX", adb_path=r"C:\ProgramData\adb\adb.exe"
-)
-df = pd.Q_adb_to_df(device=device)
-
-#second way
+################################################
 from a_pandas_ex_adb_to_df import pd_add_adb_to_df
 import pandas as pd
+adb_path = "C:\\Users\\Gamer\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe"
+deviceserial = "localhost:5745"
 pd_add_adb_to_df()
-df = pd.Q_adb_to_df(device="XXXXXXXXXXXXXXXXXXXXXX", adb_path=r"C:\ProgramData\adb\adb.exe")
+df = pd.Q_adb_to_df(device=deviceserial,adb_path=adb_path)
+print(df)
 
 
 print(df.loc[df.aa_fullpath.str.contains(r'download.*_.*\.mp4',na=False,regex=True, flags=re.IGNORECASE)][:5].to_string())
