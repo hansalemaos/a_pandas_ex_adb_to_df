@@ -6,6 +6,16 @@ pip install a-pandas-ex-adb-to-df
 
 ```python
 ################################################
+#Update 2022/12/05:
+# Added ff_pull_file_cat to pull files that usually need su rights, which is not possible using "adb pull" (Maybe it is, but I haven't 
+# found a way)
+
+# Make sure to exclude folders and symlinks when you copy files using cat:
+df.loc[(df.aa_symlink.isna()) & (df.aa_size > 0) & (~df.aa_rights.str.contains('^d'))].ff_pull_file_cat.apply(lambda x:x('f:\\gvbadsasww', timeout=15))
+################################################
+
+
+################################################
 #Update 2022/11/22:
 ################################################
 #you can now pull files (folders will be created if they don't exist)
