@@ -9,9 +9,57 @@ import regex
 from subprocess_print_and_capture import (
     execute_subprocess_multiple_commands_with_timeout_bin,
 )
-
 pulledfilecompiled = regex.compile(r"1\s+file\s+pulled", flags=regex.IGNORECASE)
 
+
+def pull_with_cat(
+    save_in_folder,
+    folder_on_device,
+    fullpath_on_device,
+    adb_path,
+    device_serial,
+    exit_keys: str = "ctrl+x",
+    print_output=False,
+    timeout=None,
+):
+    # df.loc[(~df.aa_fullpath.str.contains('mnt/|system/|boot/|dev/|sdcard/|storage/|sys/|acct/')) & (df.aa_symlink.isna()) & (df.aa_size > 0) & (~df.aa_rights.str.contains('^d'))].ff_pull_file_cat.apply(lambda x:x('f:\\gvbadsasww', timeout=15))
+    # print(save_in_folder, folder_on_device, fullpath_on_device, adb_path)
+    try:
+        savepath_folder = (
+            os.path.join(save_in_folder, folder_on_device)
+            .replace("/", os.sep)
+            .replace("\\", os.sep)
+        )
+
+        savepath = os.path.normpath(os.path.join(save_in_folder, fullpath_on_device))
+        if not os.path.exists(savepath_folder):
+            os.makedirs(savepath_folder)
+        command = f"""su -- cat {fullpath_on_device}"""
+        if not isroot(adb_path, device_serial):
+            command = f"""cat {fullpath_on_device}"""
+
+        filax = b"".join(
+            [
+                x.replace(b"\r\n", b"\n")
+                for x in execute_multicommands_adb_shell(
+                    adb_path,
+                    device_serial,
+                    [command],
+                    exit_keys=exit_keys,
+                    print_output=print_output,
+                    timeout=timeout,
+                )
+            ]
+        )
+        try:
+            with open(savepath, mode="wb") as f:
+                f.write(filax)
+        except Exception:
+            pass
+        return savepath
+    except Exception as fe:
+        print(fe, end='\r')
+    return pd.NA
 
 def copy_func(f):
     if callable(f):
@@ -300,6 +348,20 @@ def get_folder_df(device: str, adb_path: str) -> pd.DataFrame:
         ),
         axis=1,
     )
+
+    df["ff_pull_file_cat"] = df.apply(
+        lambda x: FlexiblePartial(
+            pull_with_cat,
+            "()",
+            True,
+            folder_on_device=x.aa_folder,
+            fullpath_on_device=x.aa_fullpath,
+            adb_path=adb_path,
+            device_serial=device,
+        ),
+        axis=1,
+    )
+
     return df
 
 
