@@ -235,23 +235,24 @@ def isroot(
     return isrooted
 
 
-def get_folder_df(device: str, adb_path: str) -> pd.DataFrame:
+def get_folder_df(device: str, adb_path: str,folder='') -> pd.DataFrame:
     connect_to_adb(adb_path=adb_path, deviceserial=device)
-    executecommand = 'ls -R -i -H -las -s "////////////$PWD/"*'
-    if isroot(adb_path, device, print_output=False):
-        executecommand = 'su -- ls -R -i -H -las -s "////////////$PWD/"*'
-
+    executecommand = f'''cd {folder} && ls -R -i -H -las -s "////////////$PWD/"*'''
+    if isroot(adb_path, device, print_output=True):
+        executecommand = f'su -c \'cd {folder} && ls -R -i -H -las -s "////////////$PWD/"\'*'
     data = execute_multicommands_adb_shell(
-        adb_path, device, executecommand, print_output=False
+        adb_path, device, executecommand, print_output=True
     )
     df = pd.DataFrame(data)
     df[0] = df[0].apply(lambda x: x.decode("utf-8", "replace"))
-    df[1] = df[0].apply(lambda x: x if "//////////////" in x[:15] else pd.NA)
+    df[1] = df[0].apply(lambda x: x if "////////////" in x[:15] else pd.NA)
     df[1] = df[1].ffill()
     df = df.dropna()
     df = df.copy()
     df[0] = df[0].str.strip()
     df = df.loc[df[0].str.contains(r"^\d+\s+\d+")]
+    print(df)
+
     dfcomplete = df[0].str.split(n=9, expand=True).copy()
     dfcomplete["aa_folder"] = df[1].str.strip().str.strip(":/")
     symlink = dfcomplete[9].str.split(" -> ", regex=False, expand=True)
