@@ -6,6 +6,12 @@ pip install a-pandas-ex-adb-to-df
 
 ```python
 ################################################
+#Update 2022/12/06:
+
+# select individual folder
+df = pd.Q_adb_to_df(device=deviceserial,adb_path=adb_path, folder='data/') # will automatically switch to su
+
+################################################
 #Update 2022/12/05:
 # Added ff_pull_file_cat to pull files that usually need su rights, which is not possible using "adb pull" (Maybe it is, but I haven't 
 # found a way)
