@@ -1,3 +1,7 @@
+# Use:
+# https://github.com/hansalemaos/usefuladb
+# https://github.com/hansalemaos/usefuladbplus
+
 # Use the power of pandas to manage the files on your Android device
 
 ```python
